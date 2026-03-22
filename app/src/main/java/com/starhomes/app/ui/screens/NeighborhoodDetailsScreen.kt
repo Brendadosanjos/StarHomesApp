@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,11 +21,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.starhomes.app.data.MockData
 import com.starhomes.app.data.Screen
+import com.starhomes.app.ui.Blue400
+import com.starhomes.app.ui.Gray400
+import com.starhomes.app.ui.Gray800
 
 @Composable
 fun NeighborhoodDetailsScreen(
@@ -41,10 +47,14 @@ fun NeighborhoodDetailsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Text(neighborhood.name, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 12.dp))
+        Text(
+            neighborhood.name,
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
 
-        // Property grid
         val gridHeight = if (neighborhood.properties.size <= 3) 160.dp else 320.dp
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
@@ -70,13 +80,30 @@ fun NeighborhoodDetailsScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
+                    // Overlay escuro para legibilidade do texto
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                Modifier.wrapContentHeight(Alignment.Bottom)
+                            )
+                    )
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .padding(4.dp)
                     ) {
-                        Text(property.type, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Text("£${property.price}/mês", color = Color.White, fontSize = 9.sp)
+                        Text(
+                            property.type,
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "£${property.price}/mês",
+                            color = Color.White,
+                            fontSize = 9.sp
+                        )
                     }
                 }
             }
@@ -84,41 +111,91 @@ fun NeighborhoodDetailsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Simple map placeholder (clickable to open Google Maps)
         val mapsUrl = "https://www.google.com/maps/search/?api=1&query=${neighborhood.center.lat},${neighborhood.center.lng}"
+
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2937)),
+            colors = CardDefaults.cardColors(containerColor = Gray800),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = Blue400,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    "📍 ${neighborhood.name}",
+                    neighborhood.name,
                     color = Color.White,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    textAlign = TextAlign.Center
                 )
                 Text(
-                    "Lat: ${neighborhood.center.lat}, Lng: ${neighborhood.center.lng}",
-                    color = Color(0xFF9CA3AF),
-                    fontSize = 12.sp
+                    neighborhood.description,
+                    color = Gray400,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
                 )
-                neighborhood.properties.forEach { p ->
-                    if (p.lat != null && p.lng != null) {
-                        Text("• ${p.type} — £${p.price}", color = Color(0xFF9CA3AF), fontSize = 12.sp)
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                Spacer(Modifier.height(12.dp))
+
+                neighborhood.properties.forEach { property ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "• ${property.type}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "£${property.price}/mês",
+                            color = Blue400,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
+
                 Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                Spacer(Modifier.height(8.dp))
+
+                // Botão Google Maps centralizado
                 TextButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl)))
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl))
+                        )
                     }
                 ) {
-                    Text("Abrir com o Google Maps", color = Color(0xFF60A5FA))
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Blue400,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "Abrir com o Google Maps",
+                        color = Blue400,
+                        fontSize = 14.sp
+                    )
                 }
             }
         }

@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,54 +42,24 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        // ── Cabeçalho com botão Voltar e Editar ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Botão Voltar → EditProfile
-            IconButton(onClick = { navigateTo(Screen.EDIT_PROFILE) }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = Color.White
-                )
-            }
-
-            Text(
-                "Relatório de Preferências",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            // Botão Editar → tela de preferências
-            IconButton(onClick = { navigateTo(Screen.PREFERENCES) }) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Editar preferências",
-                    tint = Blue400
-                )
-            }
-        }
-
         Text(
-            "Com base no seu perfil e nas suas preferências, o Star Homes AI analisou o que é mais importante para você.",
+            text = "Relatório de Preferências",
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Com base no seu perfil e nas suas preferências, o Star Homes AI analisou o que é mais importante para você.",
             color = Gray400,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Donut chart
         DonutChart(data = chartData, total = total)
         Spacer(Modifier.height(16.dp))
 
-        // Legenda
         chartData.forEach { item ->
             Row(
                 modifier = Modifier.padding(vertical = 4.dp),
@@ -101,7 +70,7 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
                 }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "${item.name}: ${((item.value / total) * 100).toInt()}%",
+                    text = "${item.name}: ${((item.value / total) * 100).toInt()}%",
                     color = Color.White,
                     fontSize = 14.sp
                 )
@@ -109,7 +78,6 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
         }
         Spacer(Modifier.height(24.dp))
 
-        // Resumo das preferências
         Card(
             colors = CardDefaults.cardColors(containerColor = Gray800),
             shape = RoundedCornerShape(12.dp),
@@ -117,7 +85,7 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 ReportItem("Perfil", prefs.profileType.label)
                 ReportItem("Faixa de preço", "£${prefs.priceRange.first} - £${prefs.priceRange.second}/mês")
@@ -129,16 +97,15 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
 
         Spacer(Modifier.height(24.dp))
 
-        // Botão textual para editar preferências
-        TextButton(onClick = { navigateTo(Screen.PREFERENCES) }) {
+        TextButton(onClick = { navigateTo(Screen.PROFILE_SETUP) }) {
             Icon(
-                imageVector = Icons.Default.Edit,
+                Icons.Default.Edit,
                 contentDescription = null,
                 tint = Blue400,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(Modifier.width(6.dp))
-            Text("Editar minhas preferências", color = Blue400, fontSize = 14.sp)
+            Text(text = "Editar minhas preferências", color = Blue400)
         }
     }
 }
@@ -164,7 +131,7 @@ private fun DonutChart(data: List<ChartItem>, total: Float) {
                 startAngle += sweep
             }
         }
-        Text("Perfil", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(text = "Perfil", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }
 }
 
@@ -174,7 +141,7 @@ private fun ReportItem(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Gray400, fontSize = 14.sp)
-        Text(value, color = Blue400, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = label, color = Gray400, fontSize = 14.sp)
+        Text(text = value, color = Blue400, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }

@@ -1,9 +1,12 @@
 package com.starhomes.app
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -12,15 +15,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.starhomes.app.data.Screen
+import com.starhomes.app.notification.NotificationHelper
 import com.starhomes.app.ui.StarHomesTheme
 import com.starhomes.app.ui.components.AppFooter
 import com.starhomes.app.ui.components.AppHeader
 import com.starhomes.app.ui.screens.*
 
 class MainActivity : ComponentActivity() {
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* permissão concedida ou negada — app funciona nos dois casos */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        NotificationHelper.createNotificationChannel(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
         setContent {
             StarHomesTheme {
                 StarHomesApp()
@@ -39,10 +55,10 @@ fun StarHomesApp(vm: AppViewModel = viewModel()) {
         currentScreen = when (currentScreen) {
             Screen.SIGNUP -> Screen.LOGIN
             Screen.FORGOT_PASSWORD -> Screen.LOGIN
+            Screen.PROFILE_SETUP -> Screen.PREFERENCES_REPORT
             Screen.NEIGHBORHOOD_DETAILS -> Screen.SEARCH_RESULTS
             Screen.PROPERTY_DETAILS -> Screen.NEIGHBORHOOD_DETAILS
             Screen.PREFERENCES_REPORT -> Screen.EDIT_PROFILE
-            Screen.PREFERENCES -> Screen.PREFERENCES_REPORT
             Screen.FAVORITES -> Screen.SEARCH_RESULTS
             Screen.APPOINTMENTS -> Screen.SEARCH_RESULTS
             Screen.VIRTUAL_TOUR -> Screen.PROPERTY_DETAILS
@@ -58,8 +74,7 @@ fun StarHomesApp(vm: AppViewModel = viewModel()) {
         Screen.FAVORITES, Screen.APPOINTMENTS
     )
     val showBack = currentScreen !in listOf(
-        Screen.LOGIN, Screen.SEARCH_RESULTS, Screen.PROFILE_SETUP,
-        Screen.EDIT_PROFILE, Screen.CHAT, Screen.PREFERENCES
+        Screen.LOGIN, Screen.SEARCH_RESULTS, Screen.CHAT
     )
 
     Column(
@@ -105,7 +120,6 @@ fun StarHomesApp(vm: AppViewModel = viewModel()) {
                     navigateTo = navigateTo
                 )
                 Screen.PREFERENCES_REPORT -> PreferencesReportScreen(navigateTo)
-                Screen.PREFERENCES -> ProfileSetupScreen(navigateTo)
                 Screen.FAVORITES -> FavoritesScreen(
                     favoriteIds = vm.favoritePropertyIds.toList(),
                     navigateTo = navigateTo,
@@ -117,8 +131,12 @@ fun StarHomesApp(vm: AppViewModel = viewModel()) {
                     addAppointment = { id, type, date, time -> vm.addAppointment(id, type, date, time) },
                     navigateTo = navigateTo
                 )
-                Screen.APPOINTMENTS -> AppointmentsScreen(appointments = vm.appointments.toList())
+                Screen.APPOINTMENTS -> AppointmentsScreen(
+                    appointments = vm.appointments.toList(),
+                    onCancelAppointment = { id -> vm.cancelAppointment(id) }
+                )
                 Screen.FORGOT_PASSWORD -> ForgotPasswordScreen(navigateTo)
+                else -> {}
             }
         }
 

@@ -16,7 +16,6 @@ enum class ProfileType(val label: String) {
     OTHER("Outro")
 }
 
-// ----- Data Classes -----
 
 data class User(
     val name: String,

@@ -38,7 +38,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Instância do gerenciador de GPS
     val locationManager = remember { LocationManager(context) }
 
     var selectedProfile by remember { mutableStateOf<ProfileType?>(null) }
@@ -48,7 +47,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
     var transport by remember { mutableStateOf(true) }
     var safety by remember { mutableStateOf(true) }
 
-    // Estados de GPS
     var isLocating by remember { mutableStateOf(false) }
     var locationError by remember { mutableStateOf<String?>(null) }
 
@@ -65,13 +63,11 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
         if (granted) {
-            // Permissão concedida → inicia leitura do sensor GPS
             isLocating = true
             locationError = null
             scope.launch {
                 locationManager.getCurrentLocation().collect { location ->
                     if (location != null) {
-                        // Converte coordenadas em endereço legível via Geocoder
                         val humanAddress = locationManager.getAddressFromCoordinates(
                             location.latitude,
                             location.longitude
@@ -88,11 +84,9 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
         }
     }
 
-    // Função chamada ao clicar em "Usar minha localização"
     fun requestLocation() {
         locationError = null
         if (locationManager.hasLocationPermission()) {
-            // Já tem permissão — lê o GPS diretamente
             isLocating = true
             scope.launch {
                 locationManager.getCurrentLocation().collect { location ->
@@ -108,7 +102,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
                 }
             }
         } else {
-            // Solicita permissão ao usuário
             locationPermissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -133,7 +126,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
         )
         Spacer(Modifier.height(24.dp))
 
-        // ── Tipo de perfil ──────────────────────────────────────────
         Text("Perfil", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         Spacer(Modifier.height(8.dp))
         profileTypes.forEach { type ->
@@ -164,7 +156,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
         }
         Spacer(Modifier.height(20.dp))
 
-        // ── Endereço com GPS real ───────────────────────────────────
         Text(
             "Informe seu endereço",
             color = Color.White,
@@ -179,7 +170,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
 
-        // Botão que aciona o sensor GPS
         Button(
             onClick = { requestLocation() },
             enabled = !isLocating,
@@ -210,7 +200,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
             }
         }
 
-        // Mensagem de erro do GPS, se houver
         locationError?.let { error ->
             Spacer(Modifier.height(6.dp))
             Text(error, color = Color(0xFFF87171), fontSize = 12.sp)
@@ -218,7 +207,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Faixa de preço ─────────────────────────────────────────
         Text(
             "Faixa de preço máxima: £${maxPrice.toInt()}/mês",
             color = Color.White,
@@ -235,7 +223,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
 
-        // ── Prioridades ────────────────────────────────────────────
         Text("Prioridades", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         Spacer(Modifier.height(8.dp))
         CheckItem("Escolas próximas", schools) { schools = it }

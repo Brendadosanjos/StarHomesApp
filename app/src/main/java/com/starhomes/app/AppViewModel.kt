@@ -1,13 +1,17 @@
 package com.starhomes.app
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.starhomes.app.data.Appointment
 import com.starhomes.app.data.MockData
 import com.starhomes.app.data.User
+import com.starhomes.app.storage.StorageManager
 
-class AppViewModel : ViewModel() {
+class AppViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val storage = StorageManager(application)
 
     var user = mutableStateOf(MockData.USER)
         private set
@@ -18,9 +22,13 @@ class AppViewModel : ViewModel() {
     var selectedPropertyId = mutableStateOf<String?>(null)
         private set
 
-    val favoritePropertyIds = mutableStateListOf<String>()
+    val favoritePropertyIds = mutableStateListOf<String>().also { list ->
+        list.addAll(storage.loadFavorites())
+    }
 
-    val appointments = mutableStateListOf<Appointment>()
+    val appointments = mutableStateListOf<Appointment>().also { list ->
+        list.addAll(storage.loadAppointments())
+    }
 
     fun updateUser(newUser: User) {
         user.value = newUser
@@ -34,13 +42,17 @@ class AppViewModel : ViewModel() {
         selectedPropertyId.value = id
     }
 
+
     fun toggleFavorite(propertyId: String) {
         if (favoritePropertyIds.contains(propertyId)) {
             favoritePropertyIds.remove(propertyId)
         } else {
             favoritePropertyIds.add(propertyId)
         }
+        // Persiste no armazenamento local
+        storage.saveFavorites(favoritePropertyIds.toSet())
     }
+
 
     fun addAppointment(propertyId: String, type: String, date: String, time: String) {
         val appointment = Appointment(
@@ -52,5 +64,13 @@ class AppViewModel : ViewModel() {
         )
         appointments.add(appointment)
         appointments.sortBy { it.date }
+        // Persiste no armazenamento local
+        storage.saveAppointments(appointments.toList())
+    }
+
+
+    fun cancelAppointment(id: String) {
+        appointments.removeAll { it.id == id }
+        storage.saveAppointments(appointments.toList())
     }
 }

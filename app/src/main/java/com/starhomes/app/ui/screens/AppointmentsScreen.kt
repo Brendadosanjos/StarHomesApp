@@ -6,8 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,10 +25,20 @@ import com.starhomes.app.ui.Gray400
 import com.starhomes.app.ui.Gray800
 
 @Composable
-fun AppointmentsScreen(appointments: List<Appointment>) {
+fun AppointmentsScreen(
+    appointments: List<Appointment>,
+    onCancelAppointment: (String) -> Unit = {}
+) {
+    var appointmentToCancel by remember { mutableStateOf<Appointment?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        Text("Meus Agendamentos", color = Color.White, fontSize = 22.sp,
-            fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Text(
+            text = "Meus Agendamentos",
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         if (appointments.isEmpty()) {
             Column(
@@ -35,14 +46,18 @@ fun AppointmentsScreen(appointments: List<Appointment>) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.DateRange, contentDescription = null,
-                    tint = Gray400, modifier = Modifier.size(64.dp))
+                Icon(
+                    Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = Gray400,
+                    modifier = Modifier.size(64.dp)
+                )
                 Spacer(Modifier.height(16.dp))
-                Text("Você não possui agendamentos.", color = Gray400)
+                Text(text = "Você não possui agendamentos.", color = Gray400)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(appointments) { appointment ->
+                items(appointments, key = { it.id }) { appointment ->
                     val property = MockData.findProperty(appointment.propertyId) ?: return@items
                     val neighborhood = MockData.findNeighborhoodByProperty(appointment.propertyId)
 
@@ -52,49 +67,135 @@ fun AppointmentsScreen(appointments: List<Appointment>) {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Row {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 AsyncImage(
                                     model = property.image,
                                     contentDescription = property.type,
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(72.dp).clip(RoundedCornerShape(8.dp))
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(8.dp))
                                 )
                                 Spacer(Modifier.width(12.dp))
-                                Column {
-                                    // Type badge
+                                Column(modifier = Modifier.weight(1f)) {
+                                    // Badge do tipo
                                     val isVisita = appointment.type == "Visita"
                                     Surface(
                                         shape = RoundedCornerShape(50),
-                                        color = if (isVisita) Color(0xFF065F46).copy(alpha = 0.4f) else Color(0xFF4C1D95).copy(alpha = 0.4f),
+                                        color = if (isVisita)
+                                            Color(0xFF065F46).copy(alpha = 0.4f)
+                                        else
+                                            Color(0xFF4C1D95).copy(alpha = 0.4f),
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     ) {
                                         Text(
-                                            appointment.type,
+                                            text = appointment.type,
                                             color = if (isVisita) Color(0xFF34D399) else Color(0xFFA78BFA),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                         )
                                     }
-                                    Text(property.type, color = Color.White, fontWeight = FontWeight.Bold)
-                                    Text("em ${neighborhood?.name}", color = Gray400, fontSize = 12.sp)
+                                    Text(
+                                        text = property.type,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "em ${neighborhood?.name}",
+                                        color = Gray400,
+                                        fontSize = 12.sp
+                                    )
                                 }
                             }
+
                             HorizontalDivider(
                                 color = Color.White.copy(alpha = 0.08f),
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(appointment.date, color = Color.White, fontWeight = FontWeight.SemiBold)
-                                Text(appointment.time, color = Blue400, fontWeight = FontWeight.SemiBold)
+                                Column {
+                                    Text(
+                                        text = appointment.date,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = appointment.time,
+                                        color = Blue400,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                OutlinedButton(
+                                    onClick = { appointmentToCancel = appointment },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = Color(0xFFF87171)
+                                    ),
+                                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                                        brush = androidx.compose.ui.graphics.SolidColor(
+                                            Color(0xFFF87171).copy(alpha = 0.5f)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(text = "Cancelar", fontSize = 13.sp)
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    appointmentToCancel?.let { appointment ->
+        AlertDialog(
+            onDismissRequest = { appointmentToCancel = null },
+            containerColor = Color(0xFF1F2937),
+            title = {
+                Text(
+                    text = "Cancelar agendamento?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Tem certeza que deseja cancelar a visita agendada para ${appointment.date} às ${appointment.time}?",
+                    color = Gray400
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onCancelAppointment(appointment.id)
+                        appointmentToCancel = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF7F1D1D).copy(alpha = 0.8f)
+                    )
+                ) {
+                    Text(text = "Sim, cancelar", color = Color(0xFFF87171))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appointmentToCancel = null }) {
+                    Text(text = "Voltar", color = Gray400)
+                }
+            }
+        )
     }
 }
