@@ -20,7 +20,7 @@ A solução centraliza a busca por imóveis para locação, permitindo que o usu
 - 📷 **Câmera** — foto de perfil via câmera nativa ou galeria
 - 🏘️ Busca e listagem de bairros recomendados
 - 🏠 Detalhes de imóveis com fotos, informações e mapa
-- 🎥 Tour virtual 360° dos cômodos
+- 🎥 Tour virtual dos cômodos
 - 📅 Agendamento de visitas com calendário e horários disponíveis
 - ❤️ Favoritar imóveis
 - 💾 **Armazenamento local** — dados persistem após fechar o app
@@ -59,7 +59,7 @@ A solução centraliza a busca por imóveis para locação, permitindo que o usu
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/star-homes.git
+git clone https://github.com/Brendadosanjos/StarHomesApp
 ```
 
 2. **Abra no Android Studio**
