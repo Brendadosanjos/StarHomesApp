@@ -5,15 +5,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,12 +55,23 @@ fun AppointmentsScreen(
             ) {
                 Icon(
                     Icons.Default.DateRange,
+                    // ACESSIBILIDADE: ícone ilustrativo do estado vazio — a descrição
+                    // está no texto abaixo, por isso mantemos null aqui para evitar
+                    // duplicidade na leitura do TalkBack.
                     contentDescription = null,
                     tint = Gray400,
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(Modifier.height(16.dp))
-                Text(text = "Você não possui agendamentos.", color = Gray400)
+                Text(
+                    text = "Você não possui agendamentos.",
+                    color = Gray400,
+                    // ACESSIBILIDADE: semantics garante que o TalkBack leia esta
+                    // mensagem de estado vazio como uma região de status.
+                    modifier = Modifier.semantics {
+                        contentDescription = "Lista vazia. Você não possui agendamentos."
+                    }
+                )
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -70,8 +88,13 @@ fun AppointmentsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 AsyncImage(
                                     model = property.image,
-                                    contentDescription = property.type,
+                                    contentDescription = "Foto do imóvel: ${property.type} em ${neighborhood?.name ?: "bairro"}",
                                     contentScale = ContentScale.Crop,
+                                    // OTIMIZAÇÃO 1 aplicada: placeholder evita layout
+                                    // shift enquanto a imagem carrega; error evita
+                                    // espaço vazio se o download falhar.
+                                    placeholder = rememberVectorPainter(Icons.Default.Home),
+                                    error = rememberVectorPainter(Icons.Default.BrokenImage),
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(RoundedCornerShape(8.dp))
@@ -143,10 +166,20 @@ fun AppointmentsScreen(
                                         )
                                     ),
                                     shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    // ACESSIBILIDADE: semantics descreve a ação completa
+                                    // para TalkBack, incluindo a data do agendamento,
+                                    // para que o usuário saiba exatamente o que será cancelado.
+                                    modifier = Modifier.semantics {
+                                        contentDescription =
+                                            "Cancelar agendamento de ${appointment.type} em ${appointment.date} às ${appointment.time}"
+                                        role = Role.Button
+                                    }
                                 ) {
                                     Icon(
                                         Icons.Default.Delete,
+                                        // ACESSIBILIDADE: null porque o semantics do botão
+                                        // já descreve a ação completa — evita leitura dupla.
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp)
                                     )
@@ -186,13 +219,23 @@ fun AppointmentsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF7F1D1D).copy(alpha = 0.8f)
-                    )
+                    ),
+                    // ACESSIBILIDADE: semantics do botão de confirmação descreve
+                    // a ação destrutiva de forma clara para o TalkBack.
+                    modifier = Modifier.semantics {
+                        contentDescription = "Confirmar cancelamento do agendamento"
+                    }
                 ) {
                     Text(text = "Sim, cancelar", color = Color(0xFFF87171))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { appointmentToCancel = null }) {
+                TextButton(
+                    onClick = { appointmentToCancel = null },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Voltar, manter agendamento"
+                    }
+                ) {
                     Text(text = "Voltar", color = Gray400)
                 }
             }

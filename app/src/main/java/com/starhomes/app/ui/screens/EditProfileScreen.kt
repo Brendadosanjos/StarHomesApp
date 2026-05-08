@@ -129,7 +129,9 @@ fun EditProfileScreen(
         Box(contentAlignment = Alignment.BottomEnd) {
             AsyncImage(
                 model = photoUri,
-                contentDescription = "Avatar",
+                // ACESSIBILIDADE: descrição personalizada com o nome do usuário
+                // informa ao TalkBack qual foto está sendo exibida.
+                contentDescription = "Foto de perfil de ${user.name}",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(100.dp)
@@ -143,7 +145,8 @@ fun EditProfileScreen(
                 Surface(shape = CircleShape, color = Blue400, modifier = Modifier.size(34.dp)) {
                     Icon(
                         Icons.Default.CameraAlt,
-                        contentDescription = "Trocar foto",
+                        // ACESSIBILIDADE: descrição descreve a ação, não o ícone.
+                        contentDescription = "Alterar foto de perfil",
                         tint = Color.White,
                         modifier = Modifier.padding(6.dp)
                     )

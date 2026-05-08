@@ -20,6 +20,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,10 +77,20 @@ fun NeighborhoodDetailsScreen(
                             selectProperty(property.id)
                             navigateTo(Screen.PROPERTY_DETAILS)
                         }
+                        // ACESSIBILIDADE: Box clicável era completamente invisível ao
+                        // TalkBack. semantics anuncia tipo e preço do imóvel e informa
+                        // que é um botão navegável — essencial para usuários cegos.
+                        .semantics {
+                            contentDescription =
+                                "${property.type}, £${property.price} por mês. Toque para ver detalhes."
+                            role = Role.Button
+                        }
                 ) {
                     AsyncImage(
                         model = property.image,
-                        contentDescription = property.type,
+                        // ACESSIBILIDADE: null pois o semantics do Box pai já descreve
+                        // o imóvel — evita leitura duplicada pelo TalkBack.
+                        contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -96,13 +110,18 @@ fun NeighborhoodDetailsScreen(
                         Text(
                             property.type,
                             color = Color.White,
-                            fontSize = 10.sp,
+                            // ACESSIBILIDADE (contraste/legibilidade): tamanho anterior
+                            // era 10sp — abaixo do mínimo recomendado de 12sp para
+                            // leitura confortável, e invisível com fontes grandes do sistema.
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             "£${property.price}/mês",
                             color = Color.White,
-                            fontSize = 9.sp
+                            // ACESSIBILIDADE (contraste/legibilidade): tamanho anterior
+                            // era 9sp — extremamente pequeno. Aumentado para 11sp.
+                            fontSize = 11.sp
                         )
                     }
                 }
@@ -182,6 +201,13 @@ fun NeighborhoodDetailsScreen(
                         context.startActivity(
                             Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl))
                         )
+                    },
+                    // ACESSIBILIDADE: descreve a ação e o destino do botão
+                    // para usuários que navegam por voz ou TalkBack.
+                    modifier = Modifier.semantics {
+                        contentDescription =
+                            "Abrir ${neighborhood.name} no Google Maps"
+                        role = Role.Button
                     }
                 ) {
                     Icon(

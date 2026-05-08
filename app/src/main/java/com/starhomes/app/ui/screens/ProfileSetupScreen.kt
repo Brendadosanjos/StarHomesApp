@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +29,7 @@ import com.starhomes.app.data.Screen
 import com.starhomes.app.location.LocationManager
 import com.starhomes.app.ui.Blue400
 import com.starhomes.app.ui.Blue600
+import com.starhomes.app.ui.Gray400
 import com.starhomes.app.ui.Gray700
 import com.starhomes.app.ui.Gray800
 import com.starhomes.app.ui.components.PrimaryButton
@@ -214,12 +217,40 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
             fontSize = 16.sp
         )
         Spacer(Modifier.height(4.dp))
+
+        // =====================================================================
+        // MELHORIA DE USABILIDADE 3 — Labels de extremidade no Slider
+        // ---------------------------------------------------------------------
+        // ANTES: Slider sem nenhuma referência visual dos valores mínimo e
+        // máximo. O usuário não sabia o intervalo disponível sem arrastar
+        // o controle até as extremidades.
+        //
+        // PROBLEMA (Nielsen #6 — Reconhecimento em vez de lembrança): o usuário
+        // não deveria precisar memorizar ou descobrir por tentativa e erro qual
+        // é o range de preço disponível. As informações devem estar visíveis.
+        //
+        // DEPOIS: Row com "£500" à esquerda e "£5.000" à direita do Slider,
+        // mostrando o intervalo completo de forma imediata e sem interação.
+        // =====================================================================
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("£500", color = Gray400, fontSize = 12.sp)
+            Text("£5.000", color = Gray400, fontSize = 12.sp)
+        }
         Slider(
             value = maxPrice,
             onValueChange = { maxPrice = it },
             valueRange = 500f..5000f,
             colors = SliderDefaults.colors(thumbColor = Blue400, activeTrackColor = Blue400),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription =
+                        "Faixa de preço máxima: £${maxPrice.toInt()} por mês. " +
+                                "Mínimo £500, máximo £5.000."
+                }
         )
         Spacer(Modifier.height(20.dp))
 

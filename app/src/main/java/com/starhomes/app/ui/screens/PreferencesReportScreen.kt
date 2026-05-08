@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,9 +64,20 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
 
         chartData.forEach { item ->
             Row(
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    // ACESSIBILIDADE: mergeDescendants agrupa o círculo colorido e
+                    // o texto em uma única leitura. Sem isso, TalkBack foca no Canvas
+                    // (que não tem descrição) e depois no texto separadamente.
+                    .semantics(mergeDescendants = true) {
+                        contentDescription =
+                            "${item.name}: ${((item.value / total) * 100).toInt()} por cento"
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // ACESSIBILIDADE: Canvas é invisível ao TalkBack por natureza.
+                // A descrição está no semantics do Row pai — null aqui evita
+                // que o TalkBack tente focar neste elemento sem sentido.
                 Canvas(modifier = Modifier.size(12.dp)) {
                     drawCircle(color = item.color)
                 }
@@ -100,6 +113,9 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
         TextButton(onClick = { navigateTo(Screen.PROFILE_SETUP) }) {
             Icon(
                 Icons.Default.Edit,
+                // ACESSIBILIDADE: null porque o TextButton já tem texto descritivo
+                // ao lado — leitura dupla ("Editar, Editar minhas preferências")
+                // confunde o usuário de TalkBack.
                 contentDescription = null,
                 tint = Blue400,
                 modifier = Modifier.size(16.dp)
@@ -112,9 +128,19 @@ fun PreferencesReportScreen(navigateTo: (Screen) -> Unit) {
 
 @Composable
 private fun DonutChart(data: List<ChartItem>, total: Float) {
+    // ACESSIBILIDADE: gráfico Canvas é completamente invisível ao TalkBack.
+    // semantics no Box descreve o gráfico inteiro como um resumo textual,
+    // permitindo que usuários cegos entendam as proporções sem ver as cores.
+    val chartDescription = data.joinToString(", ") { item ->
+        "${item.name}: ${((item.value / total) * 100).toInt()}%"
+    }
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(200.dp)
+        modifier = Modifier
+            .size(200.dp)
+            .semantics {
+                contentDescription = "Gráfico de perfil de preferências. $chartDescription"
+            }
     ) {
         Canvas(modifier = Modifier.size(180.dp)) {
             val strokeWidth = 40f
@@ -138,7 +164,13 @@ private fun DonutChart(data: List<ChartItem>, total: Float) {
 @Composable
 private fun ReportItem(label: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // ACESSIBILIDADE: mergeDescendants agrupa label e valor em uma leitura
+            // única e fluida: "Perfil: Família" em vez de "Perfil" pausa "Família".
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$label: $value"
+            },
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, color = Gray400, fontSize = 14.sp)

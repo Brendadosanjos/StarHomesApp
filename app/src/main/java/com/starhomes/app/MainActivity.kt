@@ -87,12 +87,20 @@ fun StarHomesApp(vm: AppViewModel = viewModel()) {
             AppHeader(showBackButton = showBack, onBack = handleBack)
         }
 
+        // CORREÇÃO: CHAT e SEARCH_RESULTS gerenciam seu próprio padding interno.
+        // Aplicar padding externo nessas telas criava um gap extra no topo que
+        // fazia o header parecer visualmente mais alto que nas demais telas.
+        val screenPadding = when (currentScreen) {
+            Screen.CHAT, Screen.SEARCH_RESULTS -> PaddingValues(0.dp)
+            else -> PaddingValues(horizontal = 20.dp, vertical = 16.dp)
+        }
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxSize()
                 .background(Color(0xFF111827))
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(screenPadding)
         ) {
             when (currentScreen) {
                 Screen.LOGIN -> LoginScreen(navigateTo)

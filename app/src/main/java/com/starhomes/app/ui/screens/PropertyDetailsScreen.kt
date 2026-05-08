@@ -14,6 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +48,8 @@ fun PropertyDetailsScreen(
     ) {
         AsyncImage(
             model = property.image,
-            contentDescription = property.type,
+            // ACESSIBILIDADE: descrição contextual informa tipo do imóvel e bairro.
+            contentDescription = "Foto principal: ${property.type} em ${neighborhood?.name ?: "bairro"}",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -86,7 +91,19 @@ fun PropertyDetailsScreen(
         // Favorite button
         Button(
             onClick = { onToggleFavorite(property.id) },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                // ACESSIBILIDADE: semantics anuncia o estado atual do favorito
+                // (salvo ou não) e a ação que será executada ao tocar.
+                // Isso é essencial para usuários de TalkBack entenderem o toggle.
+                .semantics {
+                    contentDescription = if (isFavorite)
+                        "Remover ${property.type} dos favoritos"
+                    else
+                        "Salvar ${property.type} nos favoritos"
+                    role = Role.Button
+                },
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (isFavorite) Color(0xFF7F1D1D).copy(alpha = 0.7f) else Color(0xFF374151)
@@ -94,6 +111,8 @@ fun PropertyDetailsScreen(
         ) {
             Icon(
                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                // ACESSIBILIDADE: null porque o semantics do botão já descreve
+                // o estado — leitura dupla confunde o usuário de TalkBack.
                 contentDescription = null,
                 tint = if (isFavorite) Color(0xFFF87171) else Color.White,
                 modifier = Modifier.size(20.dp)
@@ -111,7 +130,12 @@ fun PropertyDetailsScreen(
 
 @Composable
 private fun InfoCell(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        // ACESSIBILIDADE: mergeDescendants agrupa label + valor em uma única
+        // leitura do TalkBack ("Quartos: 3"), evitando leituras fragmentadas.
+        modifier = Modifier.semantics(mergeDescendants = true) {}
+    ) {
         Text(label, color = Color(0xFF9CA3AF), fontSize = 12.sp)
         Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }

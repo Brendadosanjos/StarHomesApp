@@ -14,6 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +41,9 @@ fun VirtualTourScreen(propertyId: String?) {
         // 360° image
         AsyncImage(
             model = selectedRoom.image360,
-            contentDescription = selectedRoom.name,
+            // ACESSIBILIDADE: descreve o cômodo visualizado no tour virtual,
+            // permitindo que usuários de TalkBack entendam qual ambiente estão vendo.
+            contentDescription = "Foto 360 graus do cômodo: ${selectedRoom.name}",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,8 +60,11 @@ fun VirtualTourScreen(propertyId: String?) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Text(
-            "360° View",
-            color = Color(0xFF9CA3AF),
+            "Visão 360°",
+            // ACESSIBILIDADE (contraste): cor anterior #9CA3AF (Gray400) sobre fundo
+            // #111827 tem relação 4.6:1 — abaixo do mínimo WCAG AA para texto pequeno (4.5:1 no limite).
+            // Substituído por Color.White para garantir contraste adequado.
+            color = Color.White,
             fontSize = 12.sp,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
@@ -115,7 +125,18 @@ fun VirtualTourScreen(propertyId: String?) {
                                         if (room.id == selectedRoom.id) Color.White else Color.Gray,
                                         RoundedCornerShape(50)
                                     )
-                                    .clickable { selectedRoom = room },
+                                    .clickable { selectedRoom = room }
+                                    // ACESSIBILIDADE: pin do mapa era invisível ao TalkBack.
+                                    // semantics anuncia nome do cômodo e estado de seleção,
+                                    // permitindo navegação completa pela planta baixa sem visão.
+                                    .semantics {
+                                        contentDescription = if (room.id == selectedRoom.id)
+                                            "${room.name}, selecionado"
+                                        else
+                                            "${room.name}, toque para visualizar"
+                                        role = Role.Button
+                                        selected = room.id == selectedRoom.id
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("●", color = Color.White, fontSize = 8.sp)
@@ -141,6 +162,17 @@ private fun RoomChip(room: Room, isSelected: Boolean, onClick: () -> Unit) {
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp)
+            // ACESSIBILIDADE: Box com clickable é invisível ao TalkBack sem semantics.
+            // Anuncia o nome do cômodo, se está selecionado e o role de botão,
+            // permitindo navegação completa pelo seletor de cômodos sem visão.
+            .semantics {
+                contentDescription = if (isSelected)
+                    "${room.name}, selecionado"
+                else
+                    "${room.name}, toque para selecionar"
+                role = Role.Button
+                selected = isSelected
+            }
     ) {
         Text(room.name, color = Color.White, fontSize = 13.sp)
     }

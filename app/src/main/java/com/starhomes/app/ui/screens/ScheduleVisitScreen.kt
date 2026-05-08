@@ -35,8 +35,11 @@ import com.starhomes.app.ui.Gray400
 import com.starhomes.app.ui.Gray700
 import com.starhomes.app.ui.Gray800
 import com.starhomes.app.ui.components.PrimaryButton
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
 
 private val AVAILABLE_TIME_SLOTS = listOf(
     "08:00", "08:30", "09:00", "09:30",
@@ -70,13 +73,14 @@ fun ScheduleVisitScreen(
         initialSelectedDateMillis = System.currentTimeMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val today = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-                return utcTimeMillis >= today
+                // REFATORAÇÃO 3 — java.time no lugar de Calendar (thread-safe e mais legível).
+                // ANTES: Calendar.getInstance() com 4 chamadas set() para zerar horas/minutos/segundos.
+                // DEPOIS: LocalDate.now() convertido para milissegundos em UTC diretamente.
+                val todayMillis = LocalDate.now()
+                    .atStartOfDay()
+                    .toInstant(ZoneOffset.UTC)
+                    .toEpochMilli()
+                return utcTimeMillis >= todayMillis
             }
         }
     )
@@ -210,13 +214,31 @@ fun ScheduleVisitScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        // Formato de exibição: DD/MM/AAAA
-                        val sdfDisplay = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-                        // Formato de salvamento: AAAA-MM-DD
-                        val sdfSave = SimpleDateFormat("yyyy-MM-dd", Locale("pt", "BR"))
-                        val date = Date(millis)
-                        displayDate = sdfDisplay.format(date)
-                        saveDate = sdfSave.format(date)
+                        // REFATORAÇÃO 3 — DateTimeFormatter (java.time) no lugar de SimpleDateFormat.
+                        //
+                        // ANTES:
+                        //   val sdfDisplay = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+                        //   val sdfSave    = SimpleDateFormat("yyyy-MM-dd", Locale("pt", "BR"))
+                        //   val date = Date(millis)
+                        //   displayDate = sdfDisplay.format(date)
+                        //   saveDate    = sdfSave.format(date)
+                        //
+                        // PROBLEMA: SimpleDateFormat não é thread-safe — pode causar
+                        // resultados incorretos se instâncias forem compartilhadas entre
+                        // coroutines. Também usa a API legada java.util.Date.
+                        //
+                        // DEPOIS: Instant + ZoneOffset converte milissegundos para LocalDate.
+                        // DateTimeFormatter é imutável e thread-safe por design.
+                        val localDate = Instant.ofEpochMilli(millis)
+                            .atOffset(ZoneOffset.UTC)
+                            .toLocalDate()
+
+                        displayDate = localDate.format(
+                            DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        )
+                        saveDate = localDate.format(
+                            DateTimeFormatter.ISO_LOCAL_DATE // yyyy-MM-dd
+                        )
                     }
                     showDatePicker = false
                 }) {
