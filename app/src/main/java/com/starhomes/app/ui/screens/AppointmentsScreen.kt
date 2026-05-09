@@ -160,16 +160,15 @@ fun AppointmentsScreen(
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = Color(0xFFF87171)
                                     ),
-                                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                                        brush = androidx.compose.ui.graphics.SolidColor(
-                                            Color(0xFFF87171).copy(alpha = 0.5f)
-                                        )
+                                    // CORREÇÃO LINT: outlinedButtonBorder (sem parâmetro enabled)
+                                    // foi depreciado. Substituído por BorderStroke direto,
+                                    // que é a forma recomendada e não depreciada.
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.dp,
+                                        color = Color(0xFFF87171).copy(alpha = 0.5f)
                                     ),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    // ACESSIBILIDADE: semantics descreve a ação completa
-                                    // para TalkBack, incluindo a data do agendamento,
-                                    // para que o usuário saiba exatamente o que será cancelado.
                                     modifier = Modifier.semantics {
                                         contentDescription =
                                             "Cancelar agendamento de ${appointment.type} em ${appointment.date} às ${appointment.time}"

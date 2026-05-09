@@ -9,7 +9,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Send
+// CORREÇÃO LINT: Icons.Filled.Send foi depreciado em favor da versão
+// AutoMirrored, que espelha o ícone automaticamente em layouts RTL (árabe, hebraico).
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -149,7 +151,7 @@ fun ChatScreen(
                     .size(48.dp)
                     .background(Blue600, CircleShape)
             ) {
-                Icon(Icons.Default.Send, contentDescription = "Enviar mensagem", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar mensagem", tint = Color.White)
             }
             IconButton(
                 onClick = {},

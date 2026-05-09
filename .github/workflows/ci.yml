@@ -76,6 +76,8 @@ jobs:
         run: chmod +x gradlew
 
       # 5. Android Lint — análise estática de qualidade
+      # lint-baseline.xml registra o falso positivo InvalidFragmentVersionForActivityResult,
+      # permitindo que o CI passe sem travar nesse erro pré-existente.
       - name: Lint
         run: ./gradlew lintDebug
 
