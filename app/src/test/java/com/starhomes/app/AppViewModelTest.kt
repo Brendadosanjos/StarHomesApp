@@ -107,10 +107,10 @@ class AppViewModelUnitTest {
         fun isValidEmail(email: String) =
             email.contains("@") && email.contains(".") && email.length > 5
 
-        assertFalse(isValidEmail(""))
-        assertFalse(isValidEmail("semArroba.com"))
-        assertFalse(isValidEmail("@semdomain"))
-        assertFalse(isValidEmail("ab@c.d")) // length <= 5
+        assertFalse(isValidEmail(""))                  // vazio
+        assertFalse(isValidEmail("semArroba.com"))     // sem @
+        assertFalse(isValidEmail("@semdomain"))        // sem ponto
+        assertFalse(isValidEmail("a@b.c"))             // length == 5, não passa em > 5
     }
 
     @Test
