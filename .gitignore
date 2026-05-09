@@ -9,6 +9,7 @@
 .cxx
 local.properties
 *.hprof
+app/google-services.json
 
 # Project exclude paths
 /app/build/

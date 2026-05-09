@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "16586248830",
+    "project_id": "starhomes-d93cb",
+    "storage_bucket": "starhomes-d93cb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16586248830:android:3fc7b99643f6e1cd277e2f",
+        "android_client_info": {
+          "package_name": "com.starhomes.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCA49JRk9HBOtu7R4f1d5Xuws1W0ePuFqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
