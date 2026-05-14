@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,9 +36,12 @@ fun VirtualTourScreen(propertyId: String?) {
             fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
 
         // 360° image
+        // ACESSIBILIDADE: contentDescription = null porque o Text com
+        // selectedRoom.name logo abaixo já anuncia o cômodo ao TalkBack.
+        // Ter os dois gerava "Sala de Estar identical to 2 other items".
         AsyncImage(
             model = selectedRoom.image360,
-            contentDescription = selectedRoom.name,
+            contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -45,19 +50,30 @@ fun VirtualTourScreen(propertyId: String?) {
         )
 
         Spacer(Modifier.height(8.dp))
-        Text(
-            selectedRoom.name,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-        Text(
-            "360° View",
-            color = Color(0xFF9CA3AF),
-            fontSize = 12.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // ACESSIBILIDADE: Column com clearAndSetSemantics agrupa nome + "Visão 360°"
+        // numa leitura única: "Sala de Estar, Visão 360 graus".
+        // Sem isso, o Text do nome era focado separadamente do chip e da imagem,
+        // contribuindo para o "Sala de Estar identical to 2 other items".
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics {
+                    contentDescription = "${selectedRoom.name}, Visão 360 graus"
+                }
+        ) {
+            Text(
+                selectedRoom.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Text(
+                "Visão 360°",
+                color = Color.White,
+                fontSize = 12.sp
+            )
+        }
         Spacer(Modifier.height(16.dp))
 
         // Room selector
@@ -93,10 +109,7 @@ fun VirtualTourScreen(propertyId: String?) {
                 )
                 // Room pins overlaid on floor plan
                 plan.rooms.forEach { room ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -119,9 +132,21 @@ fun VirtualTourScreen(propertyId: String?) {
                                         if (room.id == selectedRoom.id) Color.White else Color.Gray,
                                         RoundedCornerShape(50)
                                     )
-                                    .clickable { selectedRoom = room },
+                                    .clickable { selectedRoom = room }
+                                    // ACESSIBILIDADE: o Text("●") era idêntico em todos os
+                                    // pins, gerando "'●' identical to 4 other items".
+                                    // clearAndSetSemantics substitui o "●" por uma descrição
+                                    // única por pin: "Sala de Estar, selecionado" ou
+                                    // "Cozinha, toque para visualizar".
+                                    .clearAndSetSemantics {
+                                        contentDescription = if (room.id == selectedRoom.id)
+                                            "${room.name}, selecionado na planta baixa"
+                                        else
+                                            "${room.name}, toque para visualizar"
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
+                                // Text decorativo — descrição já está no clearAndSetSemantics
                                 Text("●", color = Color.White, fontSize = 8.sp)
                             }
                         }
@@ -145,6 +170,17 @@ private fun RoomChip(room: Room, isSelected: Boolean, onClick: () -> Unit) {
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp)
+            // ACESSIBILIDADE: o Box com clickable era focado pelo TalkBack sem
+            // nenhum label legível, gerando "Item label — may not have a label
+            // readable by screen readers". clearAndSetSemantics define uma
+            // descrição única por chip, incluindo o estado de seleção:
+            // "Sala de Estar, selecionado" ou "Cozinha, toque para selecionar".
+            .clearAndSetSemantics {
+                contentDescription = if (isSelected)
+                    "${room.name}, selecionado"
+                else
+                    "${room.name}, toque para selecionar"
+            }
     ) {
         Text(room.name, color = Color.White, fontSize = 13.sp)
     }
