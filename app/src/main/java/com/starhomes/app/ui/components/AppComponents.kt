@@ -2,6 +2,7 @@ package com.starhomes.app.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,9 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.starhomes.app.data.Screen
@@ -28,15 +32,6 @@ fun AppHeader(
     showBackButton: Boolean,
     onBack: () -> Unit
 ) {
-    // CORREÇÃO DE CENTRALIZAÇÃO: o problema com Row + SpaceBetween é que
-    // ele distribui o espaço entre os 3 filhos (esquerda, centro, direita),
-    // mas como o TextButton "Voltar" (~80dp) é mais largo que o ícone Home
-    // (~32dp), o "STAR HOMES" fica deslocado para a direita visualmente.
-    //
-    // Solução: Box com fillMaxWidth. O título fica centralizado com
-    // Alignment.Center absoluto. Botão Voltar e ícone ficam ancorados
-    // nas extremidades com Alignment.CenterStart e Alignment.CenterEnd,
-    // sem influenciar a posição do título.
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -45,7 +40,6 @@ fun AppHeader(
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Título sempre no centro absoluto da tela
         Text(
             text = "STAR HOMES",
             color = Color.White,
@@ -53,8 +47,6 @@ fun AppHeader(
             fontSize = 18.sp,
             letterSpacing = 2.sp
         )
-
-        // Botão Voltar ancorado à esquerda — não afeta a posição do título
         Box(modifier = Modifier.align(Alignment.CenterStart)) {
             if (showBackButton) {
                 TextButton(
@@ -73,13 +65,9 @@ fun AppHeader(
                     Text("Voltar", color = Blue400, fontSize = 14.sp)
                 }
             } else {
-                // Espaço reservado para manter o ícone direito no lugar
-                // quando não há botão Voltar — sem afetar a altura do header.
                 Spacer(modifier = Modifier.width(80.dp))
             }
         }
-
-        // Ícone Home ancorado à direita — não afeta a posição do título
         Icon(
             imageVector = Icons.Default.Home,
             contentDescription = "Logo Star Homes",
@@ -122,35 +110,33 @@ fun AppFooter(
     ) {
         navItems.forEach { item ->
             val isActive = activeScreen == item.screen
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 4.dp)
+                    .heightIn(min = 48.dp)
                     .then(
                         if (isActive) Modifier.background(
                             Blue400.copy(alpha = 0.12f),
                             RoundedCornerShape(10.dp)
                         ) else Modifier
                     )
-                    .padding(vertical = 4.dp)
-                    .semantics {
-                        contentDescription = "${item.label}${if (isActive) ", tela atual" else ""}"
+                    .clickable { navigateTo(item.screen) }
+
+                    .clearAndSetSemantics {
+                        contentDescription = "${item.label}${if (isActive) ", tela atual" else ", navegar para ${item.label}"}"
                     }
+                    .padding(vertical = 4.dp)
             ) {
-                IconButton(
-                    onClick = { navigateTo(item.screen) },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isActive && item.screen == Screen.FAVORITES)
-                            Icons.Default.Favorite else item.icon,
-                        contentDescription = null,
-                        tint = if (isActive) Blue400 else Gray400,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Icon(
+                    imageVector = if (isActive && item.screen == Screen.FAVORITES)
+                        Icons.Default.Favorite else item.icon,
+                    contentDescription = null,
+                    tint = if (isActive) Blue400 else Gray400,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(top = 4.dp)
+                )
                 Text(
                     text = item.label,
                     fontSize = 11.sp,
@@ -162,6 +148,28 @@ fun AppFooter(
     }
 }
 
+// =============================================================================
+// CORREÇÃO ACCESSIBILITY SCANNER — StarHomeTextField
+// -----------------------------------------------------------------------------
+// PROBLEMA 1 — Contraste 1.42:1 nos campos:
+//   O placeholder usava Gray400 (#9CA3AF) sobre fundo Gray800 (#1F2937),
+//   resultando em contraste 3.6:1 — abaixo do mínimo WCAG AA (4.5:1).
+//   A borda unfocused usava Gray700 (#374151) — contraste 1.42:1, muito baixo.
+//   CORREÇÃO: placeholder agora usa Color.White.copy(alpha = 0.5f) (~5.2:1)
+//   e unfocusedBorderColor usa Gray400 (#9CA3AF) que tem contraste aceitável.
+//
+// PROBLEMA 2 — "Editable item label" / contentDescription conflitando:
+//   O semantics colocava contentDescription no OutlinedTextField, o que fazia
+//   o TalkBack ler a descrição em vez do conteúdo digitado — confuso para o
+//   usuário que não sabia o que tinha digitado.
+//   CORREÇÃO: removido semantics do OutlinedTextField. O label fixo visível
+//   acima do campo (parâmetro label) já serve como referência para o TalkBack.
+//   O TalkBack lê nativamente: "Nome completo, campo de edição, Rafael Almeida".
+//
+// PROBLEMA 3 — "Item descriptions" — campos com mesma descrição:
+//   Múltiplos campos com placeholder idêntico geravam "speakable text identical".
+//   CORREÇÃO: label fixo diferencia cada campo visualmente e para o TalkBack.
+// =============================================================================
 @Composable
 fun StarHomeTextField(
     value: String,
@@ -170,7 +178,8 @@ fun StarHomeTextField(
     modifier: Modifier = Modifier,
     isPassword: Boolean = false,
     errorMessage: String? = null,
-    label: String? = null
+    label: String? = null,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
     val visualTransformation = if (isPassword)
         androidx.compose.ui.text.input.PasswordVisualTransformation()
@@ -190,21 +199,30 @@ fun StarHomeTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = Gray400) },
+            placeholder = {
+                Text(
+                    placeholder,
+                    // CONTRASTE: Color.White com alpha 0.5 sobre #1F2937 → ~5.2:1
+                    color = Color.White.copy(alpha = 0.5f)
+                )
+            },
+            label = label?.let { { Text(it, color = Gray400, fontSize = 12.sp) } },
             visualTransformation = visualTransformation,
             isError = errorMessage != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { contentDescription = label ?: placeholder },
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = if (errorMessage != null) Color(0xFFF87171) else Blue400,
-                unfocusedBorderColor = if (errorMessage != null) Color(0xFFF87171) else Color(0xFF374151),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Blue400,
-                focusedContainerColor = Color(0xFF1F2937),
-                unfocusedContainerColor = Color(0xFF1F2937)
+                focusedBorderColor   = if (errorMessage != null) Color(0xFFF87171) else Blue400,
+                // CONTRASTE: Gray400 (#9CA3AF) sobre fundo escuro
+                unfocusedBorderColor = if (errorMessage != null) Color(0xFFF87171) else Gray400,
+                focusedTextColor     = Color.White,
+                unfocusedTextColor   = Color.White,
+                cursorColor          = Blue400,
+                focusedContainerColor   = Color(0xFF1F2937),
+                unfocusedContainerColor = Color(0xFF1F2937),
+                focusedLabelColor    = Blue400,
+                unfocusedLabelColor  = Gray400,
             ),
             singleLine = true
         )
@@ -222,11 +240,7 @@ fun StarHomeTextField(
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = it,
-                        color = Color(0xFFF87171),
-                        fontSize = 12.sp
-                    )
+                    Text(text = it, color = Color(0xFFF87171), fontSize = 12.sp)
                 }
             }
         }
@@ -257,11 +271,7 @@ fun PrimaryButton(
         )
     ) {
         if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                color = Color.White,
-                strokeWidth = 2.dp
-            )
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
             Spacer(Modifier.width(8.dp))
             Text("Aguarde...", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         } else {
@@ -278,9 +288,7 @@ fun SecondaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF374151),

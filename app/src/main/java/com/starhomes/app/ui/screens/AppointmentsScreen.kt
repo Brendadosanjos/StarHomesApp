@@ -82,7 +82,21 @@ fun AppointmentsScreen(
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Gray800),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        // ACESSIBILIDADE: semantics(mergeDescendants = true) no Card
+                        // resolve o erro "Item descriptions — speakable text 'Visita'
+                        // identical to 1 other item" e "em Kensington identical to 1 other".
+                        // O TalkBack agrupava cada Text filho separadamente, lendo
+                        // "Visita", pausa, "Visita" novamente para o segundo card.
+                        // Com mergeDescendants, cada card é um único elemento com
+                        // descrição completa: tipo do agendamento + imóvel + bairro + data.
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics(mergeDescendants = true) {
+                                contentDescription =
+                                    "${appointment.type} — ${property.type} " +
+                                            "em ${neighborhood?.name ?: "bairro"}, " +
+                                            "${appointment.date} às ${appointment.time}"
+                            }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {

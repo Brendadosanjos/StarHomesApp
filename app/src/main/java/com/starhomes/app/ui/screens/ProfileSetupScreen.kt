@@ -29,7 +29,6 @@ import com.starhomes.app.data.Screen
 import com.starhomes.app.location.LocationManager
 import com.starhomes.app.ui.Blue400
 import com.starhomes.app.ui.Blue600
-import com.starhomes.app.ui.Gray400
 import com.starhomes.app.ui.Gray700
 import com.starhomes.app.ui.Gray800
 import com.starhomes.app.ui.components.PrimaryButton
@@ -55,10 +54,6 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
 
     val profileTypes = listOf(ProfileType.FAMILY, ProfileType.STUDENT, ProfileType.PROFESSIONAL)
 
-    // ---------------------------------------------------------------
-    // Launcher de permissão de localização (sensor GPS)
-    // Solicita ACCESS_FINE_LOCATION e ACCESS_COARSE_LOCATION ao usuário
-    // ---------------------------------------------------------------
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -145,12 +140,27 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
                         shape = RoundedCornerShape(10.dp)
                     )
                     .clickable { selectedProfile = type }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    // ACESSIBILIDADE: semantics(mergeDescendants = true) agrupa
+                    // o RadioButton + Text em um único elemento focável.
+                    // Sem isso, o TalkBack focava no RadioButton isolado e
+                    // anunciava apenas "Not selected" ou "checked" — sem dizer
+                    // QUAL perfil estava sendo selecionado, gerando o erro
+                    // "Item descriptions — speakable text identical to 2 other items".
+                    // Agora anuncia: "Família, selecionado" ou "Estudante, não selecionado".
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = if (isSelected)
+                            "${type.label}, selecionado"
+                        else
+                            "${type.label}, toque para selecionar"
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = isSelected,
-                    onClick = { selectedProfile = type },
+                    // ACESSIBILIDADE: onClick = null porque o Row inteiro já é
+                    // clicável — evita dois elementos focáveis sobrepostos.
+                    onClick = null,
                     colors = RadioButtonDefaults.colors(selectedColor = Blue400)
                 )
                 Spacer(Modifier.width(12.dp))
@@ -217,40 +227,12 @@ fun ProfileSetupScreen(navigateTo: (Screen) -> Unit) {
             fontSize = 16.sp
         )
         Spacer(Modifier.height(4.dp))
-
-        // =====================================================================
-        // MELHORIA DE USABILIDADE 3 — Labels de extremidade no Slider
-        // ---------------------------------------------------------------------
-        // ANTES: Slider sem nenhuma referência visual dos valores mínimo e
-        // máximo. O usuário não sabia o intervalo disponível sem arrastar
-        // o controle até as extremidades.
-        //
-        // PROBLEMA (Nielsen #6 — Reconhecimento em vez de lembrança): o usuário
-        // não deveria precisar memorizar ou descobrir por tentativa e erro qual
-        // é o range de preço disponível. As informações devem estar visíveis.
-        //
-        // DEPOIS: Row com "£500" à esquerda e "£5.000" à direita do Slider,
-        // mostrando o intervalo completo de forma imediata e sem interação.
-        // =====================================================================
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("£500", color = Gray400, fontSize = 12.sp)
-            Text("£5.000", color = Gray400, fontSize = 12.sp)
-        }
         Slider(
             value = maxPrice,
             onValueChange = { maxPrice = it },
             valueRange = 500f..5000f,
             colors = SliderDefaults.colors(thumbColor = Blue400, activeTrackColor = Blue400),
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics {
-                    contentDescription =
-                        "Faixa de preço máxima: £${maxPrice.toInt()} por mês. " +
-                                "Mínimo £500, máximo £5.000."
-                }
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(20.dp))
 
@@ -273,12 +255,24 @@ private fun CheckItem(label: String, checked: Boolean, onCheckedChange: (Boolean
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            // ACESSIBILIDADE: heightIn(min = 48.dp) garante área de toque mínima
+            // de 48dp exigida pelo WCAG 2.5.5 e recomendada pelo Material Design.
+            // O Scanner reportava "Touch target 32dp — consider making it 48dp or larger"
+            // porque o padding(vertical = 4.dp) resultava em apenas 32dp de altura
+            // (24dp do Checkbox + 8dp de padding total).
+            .heightIn(min = 48.dp)
+            .clickable { onCheckedChange(!checked) }
+            .semantics(mergeDescendants = true) {
+                contentDescription = if (checked)
+                    "$label, marcado. Toque para desmarcar."
+                else
+                    "$label, não marcado. Toque para marcar."
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2563EB))
         )
         Spacer(Modifier.width(8.dp))

@@ -59,8 +59,7 @@ fun ChatScreen(
     // collectAsState() garante que só reage a mudanças reais de valor.
     val chatNavigation by vm.chatNavigation.collectAsState()
 
-    // Efeito colateral: quando o ViewModel sinaliza navegação, executa
-    // uma única vez e notifica o ViewModel para resetar o estado.
+
     LaunchedEffect(chatNavigation) {
         chatNavigation?.let { screen ->
             vm.onChatNavigationConsumed()
@@ -68,7 +67,6 @@ fun ChatScreen(
         }
     }
 
-    // Auto-scroll para a última mensagem sempre que a lista cresce.
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -80,8 +78,6 @@ fun ChatScreen(
             state = listState,
             modifier = Modifier
                 .weight(1f)
-                // ChatScreen gerencia seu próprio padding horizontal agora que
-                // o MainActivity não injeta mais padding externo nesta tela.
                 .padding(horizontal = 20.dp)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -104,7 +100,6 @@ fun ChatScreen(
                                 )
                             )
                             .padding(12.dp)
-                            // ACESSIBILIDADE: anuncia quem enviou cada mensagem.
                             .semantics {
                                 contentDescription =
                                     "${if (isBot) "Star Homes" else "Você"}: ${msg.text}"
@@ -142,8 +137,7 @@ fun ChatScreen(
             )
             IconButton(
                 onClick = {
-                    // REFATORAÇÃO 3: apenas delega ao ViewModel e limpa o input.
-                    // Sem coroutines, sem delays, sem navegação aqui.
+                    // REFATORAÇÃO 3: delega ao ViewModel e limpa o input.
                     vm.handleChatSend(input)
                     input = ""
                 },

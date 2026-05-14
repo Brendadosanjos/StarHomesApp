@@ -91,8 +91,7 @@ fun SignUpScreen(navigateTo: (Screen) -> Unit) {
         Text("Crie sua conta", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))
 
-        // StarHomeTextField já suporta errorMessage — exibe ícone de aviso
-        // + texto em vermelho abaixo do campo quando há erro.
+
         StarHomeTextField(
             value = name,
             onValueChange = { name = it },
@@ -144,7 +143,6 @@ fun SignUpScreen(navigateTo: (Screen) -> Unit) {
             )
         }
 
-        // Mensagem de erro dos termos exibida abaixo do checkbox
         if (termsError != null) {
             Text(
                 text = termsError,

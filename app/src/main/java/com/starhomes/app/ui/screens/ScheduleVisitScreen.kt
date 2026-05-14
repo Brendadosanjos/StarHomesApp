@@ -20,6 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,11 +40,8 @@ import com.starhomes.app.ui.Gray400
 import com.starhomes.app.ui.Gray700
 import com.starhomes.app.ui.Gray800
 import com.starhomes.app.ui.components.PrimaryButton
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-
+import java.text.SimpleDateFormat
+import java.util.*
 
 private val AVAILABLE_TIME_SLOTS = listOf(
     "08:00", "08:30", "09:00", "09:30",
@@ -73,14 +75,13 @@ fun ScheduleVisitScreen(
         initialSelectedDateMillis = System.currentTimeMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                // REFATORAÇÃO 3 — java.time no lugar de Calendar (thread-safe e mais legível).
-                // ANTES: Calendar.getInstance() com 4 chamadas set() para zerar horas/minutos/segundos.
-                // DEPOIS: LocalDate.now() convertido para milissegundos em UTC diretamente.
-                val todayMillis = LocalDate.now()
-                    .atStartOfDay()
-                    .toInstant(ZoneOffset.UTC)
-                    .toEpochMilli()
-                return utcTimeMillis >= todayMillis
+                val today = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                return utcTimeMillis >= today
             }
         }
     )
@@ -102,12 +103,25 @@ fun ScheduleVisitScreen(
         Card(
             colors = CardDefaults.cardColors(containerColor = Gray800),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
+            // ACESSIBILIDADE: clearAndSetSemantics no Card agrupa toda a
+            // informação do imóvel numa única leitura completa.
+            // Sem isso, a imagem com contentDescription = property.type e o
+            // Text com property.type geravam "Item descriptions — 'Apartamento'
+            // identical to 1 other item" porque o TalkBack os focava separado.
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 20.dp)
+                .clearAndSetSemantics {
+                    contentDescription =
+                        "${property.type} em ${neighborhood?.name ?: "bairro"}, " +
+                                "£${property.price} por mês"
+                }
         ) {
             Row(modifier = Modifier.padding(12.dp)) {
                 AsyncImage(
                     model = property.image,
-                    contentDescription = property.type,
+                    // null — a descrição está no clearAndSetSemantics do Card
+                    contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp))
                 )
@@ -214,31 +228,13 @@ fun ScheduleVisitScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        // REFATORAÇÃO 3 — DateTimeFormatter (java.time) no lugar de SimpleDateFormat.
-                        //
-                        // ANTES:
-                        //   val sdfDisplay = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-                        //   val sdfSave    = SimpleDateFormat("yyyy-MM-dd", Locale("pt", "BR"))
-                        //   val date = Date(millis)
-                        //   displayDate = sdfDisplay.format(date)
-                        //   saveDate    = sdfSave.format(date)
-                        //
-                        // PROBLEMA: SimpleDateFormat não é thread-safe — pode causar
-                        // resultados incorretos se instâncias forem compartilhadas entre
-                        // coroutines. Também usa a API legada java.util.Date.
-                        //
-                        // DEPOIS: Instant + ZoneOffset converte milissegundos para LocalDate.
-                        // DateTimeFormatter é imutável e thread-safe por design.
-                        val localDate = Instant.ofEpochMilli(millis)
-                            .atOffset(ZoneOffset.UTC)
-                            .toLocalDate()
-
-                        displayDate = localDate.format(
-                            DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                        )
-                        saveDate = localDate.format(
-                            DateTimeFormatter.ISO_LOCAL_DATE // yyyy-MM-dd
-                        )
+                        // Formato de exibição: DD/MM/AAAA
+                        val sdfDisplay = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+                        // Formato de salvamento: AAAA-MM-DD
+                        val sdfSave = SimpleDateFormat("yyyy-MM-dd", Locale("pt", "BR"))
+                        val date = Date(millis)
+                        displayDate = sdfDisplay.format(date)
+                        saveDate = sdfSave.format(date)
                     }
                     showDatePicker = false
                 }) {
